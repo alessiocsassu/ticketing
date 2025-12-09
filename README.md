@@ -1,339 +1,80 @@
-# 🧱 Barebone FastAPI OAuth2
-
-[![Use this template](https://img.shields.io/badge/GitHub-Use%20this%20template-success?style=for-the-badge&logo=github)](https://github.com/alessiocsassu/fastapi-oauth-barebone/generate)
-[![Latest Release](https://img.shields.io/github/v/release/alessiocsassu/fastapi-oauth-barebone?style=for-the-badge&logo=github)](https://github.com/alessiocsassu/fastapi-oauth-barebone/releases)
-[![License](https://img.shields.io/github/license/alessiocsassu/fastapi-oauth-barebone?style=for-the-badge)](./LICENSE)
-
-
-## ⚙️ Key Technologies
-
-| Component | Technology |
-|-----------|-------------|
-| **Language** | Python 3.12+ |
-| **API Framework** | FastAPI |
-| **Server** | Uvicorn (ASGI) |
-| **Database** | PostgreSQL |
-| **ORM** | SQLAlchemy |
-| **Migrations** | Alembic |
-| **Data Validation** | Pydantic |
-| **Authentication** | JWT (JSON Web Token) |
-
----
-
-## 🧰 Tooling & DevOps
-
-| Area | Tool |
-|-------|--------|
-| **Development Environment** | Docker + Docker Compose |
-| **Testing** | Pytest |
-| **DB Migrations** | Alembic |
-| **Security** | JWT + bcrypt |
-| **Environment Management** | .env |
-
----
-
-## 🗂️ Project Structure
-
-```text
-fastapi-oauth-base/
-│
-├── alembic
-│   ├── versions
-│   ├── env.py
-│   └── script.py.mako
-├── app
-│   ├── api
-│   │   ├── routes
-│   │   │   ├── __init__.py
-│   │   │   └── users.py
-│   │   └── __init__.py
-│   ├── auth
-│   │   ├── api
-│   │   │   ├── routes
-│   │   │   │   ├── __init__.py
-│   │   │   │   └── auth.py
-│   │   │   └── __init__.py
-│   │   ├── core
-│   │   │   ├── __init__.py
-│   │   │   └── security.py
-│   │   ├── managers
-│   │   │   ├── __init__.py
-│   │   │   └── auth_manager.py
-│   │   ├── schemas
-│   │   │   └── auth_schema.py
-│   │   ├── services
-│   │   │   ├── __init__.py
-│   │   │   └── auth_service.py
-│   │   └── __init__.py
-│   ├── config
-│   │   ├── __init__.py
-│   │   └── config.py
-│   ├── db
-│   │   ├── models
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   └── user.py
-│   │   ├── __init__.py
-│   │   └── session.py
-│   ├── managers
-│   │   ├── __init__.py
-│   │   ├── base_manager.py
-│   │   └── user_manager.py
-│   ├── schemas
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   └── user.py
-│   ├── services
-│   │   ├── __init__.py
-│   │   ├── base_service.py
-│   │   └── user_service.py
-│   ├── __init__.py
-│   ├── main.py
-│   └── pytest.ini
-├── tests
-│   ├── __pycache__
-│   ├── __init__.py
-│   └── test_users.py
-├── CHANGELOG.md
-├── Dockerfile
-├── README.md
-├── __init__.py
-├── alembic.ini
-├── docker-compose.yml
-└── pyproject.toml
-```
----
+# Ticketing
 
-## 🚀 Setup Commands
+Il progetto consiste nella creazione di un sistema di vendita ticket per eventi (cinema, concerti, convegni, etc..) e nella gestione dell'assegnazione dei posti all'utente dedito all'acquisto. Vengono gestiti anche i processi che portano alla scelta del provider per l'acquisto di uno o più biglietti.
 
-1. Create and activate the virtual environment
+Il sistema di biglietteria deve soddisfare i seguenti requisiti:
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-2. Select the Python version from the virtual environment (in your IDE)
+Richieste funzionali:
 
-3. Install and update poetry
+    - L'utente può prenotare i biglietti per uno spettacolo specifico.
+    - L'utente può prenotare più di un biglietto contemporaneamente.
+    - L'utente può prenotare posti specifici o, almeno, richiedere “N posti insieme”.
+    - Una volta che l'utente ha selezionato il/i posto/i, gli viene concesso un periodo di tempo di 10 minuti per pagarlo.
+    - Durante questo periodo di tempo, i posti sono considerati riservati per la sessione di questo utente.
+    - Gli altri utenti dovrebbero vedere questi posti come temporaneamente non disponibili.
+    - Possono comunque rientrare nel pool di posti disponibili se l'utente che li "detiene" decide di interrompere la transazione o se l'utente non paga i posti in tempo.
+    - Il sistema di pagamento è esterno e utilizzato tramite API (es. Paypal)
 
-```bash
-pip install poetry
-poetry install --no-root
-```
+Requisiti non funzionali
 
-4. Create the `.env` file
+    - Consistenza
+        - Ovviamente non vendere lo stesso posto due volte.
+        - Riporta rapidamente i posti in piscina.
+    - Reattività
+        - La mappa dei posti dovrebbe riflettere in ogni momento la mappa dell'occupazione effettiva, con bassa latenza.
+        - Tieni presente che il rapporto lettura-scrittura può essere piuttosto elevato.
+    - Disponibilità
+        - Il sistema dovrebbe servire correttamente le richieste degli utenti finali, anche se i singoli nodi, responsabili di quanto sopra, muoiono o si comportano male. Non perdere i dati dei biglietti già venduti, così come le sessioni di acquisto attualmente aperte.
 
-```bash
-cp .env.example .env
-```
+# Gestione Entità
 
-5. Build and start services with docker
-```bash
-docker compose up --build -d
-```
+Le entità principali consisteranno in Utenti, Spettacoli, Posti, Prenotazioni, e Pagamenti.
 
-6. Run alembic migrations inside the container
-```bash
-docker exec -it fastapi_app_container alembic revision --autogenerate -m "init schema"
-docker exec -it fastapi_app_container alembic upgrade head
-```
+User come entità esiste già.
 
-7. Run automated tests (opzionale)
-```bash
-docker exec -it fastapi_test_container pytest tests/
-```
+Gli spettacoli saranno identificati con l'entità `Event`:
+- `id`
+- `name`
+- `date`
 
----
+I posti di ogni evento saranno identificati con l'entità `Seat`:
+- `id`
+- `event_id`
+- `row`
+- `column`
+- `status`
+- `price`
+- `reservated_at`
 
-## 📌 Guide on how to create Model, Schema, Service, Manager and Endpoints
+Il campo `status` è un enum che può avere come valori `AVAILABLE`, `RESERVERD`, `SOLD`
 
-This project uses a modular architecture based on reusable **base classes** (`BaseService`, `BaseManager`, `BaseSchema`, `Base`) designed to avoid repeating the same logic in every new module.
+Le prenotazioni sono i biglietti che saranno prenotati e saranno identificati con l'entità `Ticket`:
+- `id`
+- `user_id`
+- `seat_id`
+- `payment_id`
+- `status`
 
-Thanks to these base classes, adding a new entity (e.g., `Product`, `Article`, `Category`, etc.) becomes fast and consistent.
+Il campo `status` è un enum che può avere come valori `PENDING`, `PAID`, `CANCELLED`
 
-Below is a step-by-step guide for anyone who clones this repository.
+Come anticipato dall'entita `Ticket` l'entità per gestire i pagamenti sarà `Payment`:
+- `id`
+- `user_id`
+- `amount`
+- `provider`
+- `status`
 
----
+Il campo `privder` è un enum che può avere come valori `PAYPAL`, `OTHER`
+Il campo `status` è un enum che può avere come valori `PENDING`, `SUCCESS`, `FAILED`
 
-### 🧱 1. Create a New Model (SQLAlchemy)
+# Gestione flusso prenotazione
 
-All models inherit from the `Base` class:
+## 1. Selezione posti e creazione ticket
 
-```python
-from sqlalchemy.orm import DeclarativeBase
+Un utente può selezionare uno o piu posti, bisognerà quindi verificare che siano disponibili, se lo sono apro una transaction a db e aggiorno lo stato dei posti a reserved impostando anche il reserved_at cosi che rimanga bloccato per 10 minuti.
+Per ogni posto prenotato creo un ticket inserendo come stato pending e chiudo la transaction.
 
-class Base(DeclarativeBase):
-    pass
-```
+## 2. Conferma prenotazione
 
-To create a new model, add a file inside:
-
-```bash
-app/db/models/
-```
-
-Example: `Product` model
-
-```python
-from sqlalchemy.orm import Mapped, mapped_column
-from app.db.models.base import Base
-
-class Product(Base):
-    __tablename__ = "products"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    code: Mapped[str]
-```
-
-After creating the model generate and apply migrations:
-
-```bash
-alembic revision --autogenerate -m "add product"
-alembic upgrade head
-```
-
-### 📄 2. Create the Pydantic Schemas
-
-Schemas define the request/response structure of your API.
-
-Create a file inside:
-
-```bash
-app/schemas/product.py
-```
-
-Example:
-
-```python
-from pydantic import BaseModel
-
-class ProductCreate(BaseModel):
-    name: str
-    code: str
-
-class ProductRead(BaseModel):
-    id: int
-    name: str
-    code: str
-```
-
-### ⚙️ 3. Create the Service (CRUD Layer)
-
-Services handle database operations only.
-They inherit from BaseService, so you don’t need to rewrite CRUD logic.
-
-Create:
-
-```bash
-app/services/product_service.py
-```
-
-Example:
-
-```python
-from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.db.models.product import Product
-from app.services.base_service import BaseService
-
-class ProductService(BaseService[Product]):
-    model = Product
-
-    @staticmethod
-    async def get_by_code(db: AsyncSession, code: str) -> Optional[Product]:
-        result = await db.execute(
-            select(Product).where(Product.code == code)
-        )
-        return result.scalar_one_or_none()
-```
-
-#### Why BaseService exists?
-
-It provides generic methods such as:
-
-- `get_list()`
-- `get_by_id()`
-- `create()`
-- `update()`
-- `delete()`
-
-This keeps your code DRY and consistent across the project.
-
-### 🧠 4. Create the Manager (Business Logic Layer)
-
-Managers sit above Services and handle:
-
-- validation
-- error handling
-- workflows
-- business rules
-- orchestration
-
-Create:
-
-```bash
-app/managers/product_manager.py
-```
-
-Example:
-
-```python
-from app.managers.base_manager import BaseManager
-from app.services.product_service import ProductService
-from app.db.models.product import Product
-
-class ProductManager(BaseManager[Product, ProductService]):
-    service = ProductService
-```
-
-#### Why BaseManager exists?
-
-It provides:
-
-- `get_or_404()`
-- `get_all()`
-- `create()` with safe error handling
-- `update()` with existence checks
-- `delete()` returning a standardized `BaseDelete` schema
-
-This ensures a consistent behavior across all endpoints.
-
-### 🚀 5. Create Routes (API Endpoints)
-
-Create a route file:
-
-```bash
-app/api/routes/product.py
-```
-
-Example:
-
-```python
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.managers.product_manager import ProductManager
-from app.schemas.product import ProductCreate, ProductRead
-from app.db.session import get_db
-
-router = APIRouter(prefix="/products", tags=["Products"])
-
-@router.get("/", response_model=list[ProductRead])
-async def list_products(db: AsyncSession = Depends(get_db)):
-    return await ProductManager.get_all(db)
-
-@router.post("/", response_model=ProductRead)
-async def create_product(
-    payload: ProductCreate,
-    db: AsyncSession = Depends(get_db),
-):
-    return await ProductManager.create(db, payload.model_dump())
-```
-
-Finally, register the router inside:
-
-```bash
-app/main.py
-```
----
+Nei 10 minuti nella quale il posto è prenotato, l'utente può procedere con il pagamento del biglietto (o dei biglietti in caso di più posti prenotati a suo nome), viene creato quindi un ordine di pagamento con status pending che reindirizza l'utente al provider selezionato, ad esempio paypal.
+Il pagamento verrà simulato e una volta concluso apro una transaction a db: lo status del pagamento verrà impostato a success, i ticket collegati a paid e i posti avranno status sold e si potrà fare a meno del reserved_at.

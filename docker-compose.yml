@@ -10,6 +10,7 @@ services:
       - .env
     depends_on:
       - db
+      - redis
     hostname: fastapi_app
   
   test:
@@ -23,6 +24,7 @@ services:
       - .env
     depends_on:
       - db
+      - redis
 
   db:
     image: postgres:15
@@ -36,6 +38,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: redis_container
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
 
 volumes:
   postgres_data:
