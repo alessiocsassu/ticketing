@@ -7,11 +7,17 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     DATABASE_URL: str
     
+    PGADMIN_DEFAULT_EMAIL: str
+    PGADMIN_DEFAULT_PASSWORD: str
+
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     BASE_URL: str
+
+    REDIS_HOST: str
+    REDIS_PORT: str
     
     model_config = ConfigDict(env_file=".env", extra="ignore")
 
@@ -33,3 +39,10 @@ class Messages():
     EMAIL_ALREADY_REGISTERED = "Email already taken"
     USER_UPDATE_ERROR = "Error during user update"
     USER_DELETE_SUCCESS = "User deleted successfully"
+
+    #EVENT MESSAGES
+    EVENT_NOT_FOUND = "Event not found"
+
+    #SEAT MESSAGES
+    SEAT_NOT_AVAILABLE = "Seat not available"
+    SEAT_NOT_FOUND = "Seat not found"

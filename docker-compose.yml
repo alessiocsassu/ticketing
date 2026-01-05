@@ -1,23 +1,23 @@
 services:
   web:
     build: .
-    container_name: fastapi_app_container
+    container_name: app
     working_dir: /
     ports:
       - "8000:8000"
-      - "5678:5678"  # Debugger port
+      - "5678:5678" # Debugger port
     env_file:
       - .env
     depends_on:
       - db
       - redis
     hostname: fastapi_app
-  
+
   test:
     build: .
-    container_name: fastapi_test_container
+    container_name: test
     #command: pytest ./tests
-    command: tail -f /dev/null 
+    command: tail -f /dev/null
     volumes:
       - ./tests:/tests
     env_file:
@@ -28,7 +28,7 @@ services:
 
   db:
     image: postgres:15
-    container_name: postgres_db_container
+    container_name: db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -39,13 +39,27 @@ services:
     ports:
       - "5432:5432"
 
+  pgadmin:
+    image: dpage/pgadmin4:9.11
+    ports:
+      - 5050:80
+    environment:
+      # Required by pgAdmin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
+      # Don't require the user to login
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+
+      # Don't require a "master" password after logging in
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+
   redis:
     image: redis:7
-    container_name: redis_container
+    container_name: redis
     restart: unless-stopped
     ports:
       - "6379:6379"
-
 
 volumes:
   postgres_data:

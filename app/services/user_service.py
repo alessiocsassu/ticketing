@@ -16,3 +16,8 @@ class UserService(BaseService[User]):
     async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
         result = await db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def check_user_exists(db: AsyncSession, user_id: int) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none() is not None
